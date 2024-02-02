@@ -13,7 +13,7 @@
 # =========== Copyright 2023 @ CAMEL-AI.org. All Rights Reserved. ===========
 from typing import Any, List
 
-from openai import OpenAI
+from openai import OpenAI, AzureOpenAI
 
 from camel.embeddings import BaseEmbedding
 from camel.types import EmbeddingModelType
@@ -39,7 +39,15 @@ class OpenAIEmbedding(BaseEmbedding[str]):
             raise ValueError("Invalid OpenAI embedding model type.")
         self.model_type = model_type
         self.output_dim = model_type.output_dim
-        self.client = OpenAI()
+        if 'AZURE_OPENAI_API_KEY' in os.environ:
+            self.client = AzureOpenAI(
+                # https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#rest-api-versioning
+                api_version = "2023-03-15-preview",
+                # https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal#create-a-resource
+                azure_endpoint="https://gdoman-ai-aiservices-328154062.openai.azure.com/openai/deployments/gpt-35-turbo/chat/completions?api-version=2023-03-15-preview",
+            )
+        else:
+            self.client = OpenAI()
 
     @openai_api_key_required
     def embed_list(

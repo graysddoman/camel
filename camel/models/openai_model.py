@@ -14,7 +14,7 @@
 import os
 from typing import Any, Dict, List, Optional, Union
 
-from openai import OpenAI, Stream
+from openai import OpenAI, Stream, AzureOpenAI
 
 from camel.configs import OPENAI_API_PARAMS_WITH_FUNCTIONS
 from camel.messages import OpenAIMessage
@@ -41,9 +41,22 @@ class OpenAIModel(BaseModelBackend):
                 be fed into openai.ChatCompletion.create().
         """
         super().__init__(model_type, model_config_dict)
-        url = os.environ.get('OPENAI_API_BASE_URL', None)
-        self._client = OpenAI(timeout=60, max_retries=3, base_url=url)
-        self._token_counter: Optional[BaseTokenCounter] = None
+        if 'AZURE_OPENAI_API_KEY' in os.environ:
+            print("Using Azure OpenAI API")
+            print(os.environ.get('AZURE_OPENAI_API_BASE_URL', None))
+            url = os.environ.get('AZURE_OPENAI_API_BASE_URL', None)
+            self._client = AzureOpenAI(
+                # https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#rest-api-versioning
+                api_version = "2023-03-15-preview",
+                # https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal#create-a-resource
+                azure_endpoint="https://gdoman-ai-aiservices-328154062.openai.azure.com/openai/deployments/gpt-35-turbo/chat/completions?api-version=2023-03-15-preview",
+            )
+            self._token_counter: Optional[BaseTokenCounter] = None
+        else:
+            print("Using OpenAI API")
+            url = os.environ.get('OPENAI_API_BASE_URL', None)
+            self._client = OpenAI(timeout=60, max_retries=3, base_url=url)
+            self._token_counter: Optional[BaseTokenCounter] = None
 
     @property
     def token_counter(self) -> BaseTokenCounter:

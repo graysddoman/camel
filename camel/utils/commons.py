@@ -46,7 +46,9 @@ def openai_api_key_required(func: F) -> F:
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        if 'OPENAI_API_KEY' in os.environ:
+        if 'AZURE_OPENAI_API_KEY' in os.environ:
+            return func(self, *args, **kwargs)
+        elif 'OPENAI_API_KEY' in os.environ:
             return func(self, *args, **kwargs)
         else:
             raise ValueError('OpenAI API key not found.')
